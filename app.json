@@ -24,8 +24,9 @@
       },
       "package": "com.framez.app",
       "permissions": [
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -41,10 +42,11 @@
       "expo-font"
     ],
     "extra": {
+      "convexUrl": "https://hip-viper-532.convex.cloud",
       "eas": {
-        "projectId": "your-project-id"
-      },
-      "convexUrl": "https://hip-viper-532.convex.cloud"
-    }
+        "projectId": "d2b4222d-9a86-4de8-bf82-0d4b897febcf"
+      }
+    },
+    "owner": "puritygwaro"
   }
 }
