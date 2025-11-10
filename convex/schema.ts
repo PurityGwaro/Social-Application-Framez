@@ -7,6 +7,7 @@ export default defineSchema({
     name: v.string(),
     passwordHash: v.string(),
     avatar: v.optional(v.string()),
+    avatarStorageId: v.optional(v.id("_storage")),
     createdAt: v.number(),
   }).index("by_email", ["email"]),
 

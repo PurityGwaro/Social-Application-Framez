@@ -37,11 +37,18 @@ export const getAllPosts = query({
     const postsWithUsers = await Promise.all(
       posts.map(async (post) => {
         const user = await ctx.db.get(post.userId);
+        let avatarUrl = user?.avatar;
+
+        // If user has avatarStorageId but no avatar URL, generate it
+        if (user?.avatarStorageId && !avatarUrl) {
+          avatarUrl = (await ctx.storage.getUrl(user.avatarStorageId)) ?? undefined;
+        }
+
         return {
           ...post,
           user: user ? {
             name: user.name,
-            avatar: user.avatar,
+            avatar: avatarUrl,
           } : null,
         };
       })

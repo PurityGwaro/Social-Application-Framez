@@ -87,3 +87,30 @@ export const getUserById = query({
     };
   },
 });
+
+export const updateAvatar = mutation({
+  args: {
+    userId: v.id("users"),
+    avatarStorageId: v.id("_storage"),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const avatarUrl = await ctx.storage.getUrl(args.avatarStorageId);
+
+    await ctx.db.patch(args.userId, {
+      avatarStorageId: args.avatarStorageId,
+      avatar: avatarUrl ?? undefined,
+    });
+
+    return {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      avatar: avatarUrl ?? undefined,
+    };
+  },
+});

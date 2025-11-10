@@ -25,15 +25,19 @@ export default function HomeScreen() {
   const renderPost = ({ item }: { item: Post }) => (
     <View style={styles.postContainer}>
       <View style={styles.postHeader}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {item.user?.name.charAt(0).toUpperCase() || 'U'}
-          </Text>
-        </View>
+        {item.user?.avatar ? (
+          <Image source={{ uri: item.user.avatar }} style={styles.avatar} />
+        ) : (
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {item.user?.name.charAt(0).toUpperCase() || 'U'}
+            </Text>
+          </View>
+        )}
         <View style={styles.postHeaderText}>
           <Text style={styles.username}>{item.user?.name || 'Unknown'}</Text>
           <Text style={styles.timestamp}>
-            {new Date(item.createdAt).toLocaleDateString()}
+            {new Date(item.createdAt).toLocaleDateString()} at {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </Text>
         </View>
       </View>

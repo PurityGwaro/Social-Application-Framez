@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,19 +9,23 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Post } from '../types';
 import Toast from 'react-native-toast-message';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, login } = useAuth();
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const userPosts = useQuery(
     api.posts.getUserPosts,
     user?._id ? { userId: user._id } : 'skip'
   );
+  const updateAvatar = useMutation(api.auth.updateAvatar);
+  const generateUploadUrl = useMutation(api.posts.generateUploadUrl);
 
   console.log('ProfileScreen - User:', user?._id);
   console.log('ProfileScreen - User posts count:', userPosts?.length);
@@ -43,6 +47,79 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const handleChangeAvatar = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== 'granted') {
+        Toast.show({
+          type: 'info',
+          text1: 'Permission Required',
+          text2: 'Please grant camera roll permissions to change your avatar',
+          visibilityTime: 4000,
+        });
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0] && user?._id) {
+        setUploadingAvatar(true);
+        console.log('Uploading avatar...');
+
+        const uploadUrl = await generateUploadUrl();
+
+        const response = await fetch(result.assets[0].uri);
+        if (!response.ok) {
+          throw new Error('Failed to fetch image');
+        }
+        const blob = await response.blob();
+
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': blob.type },
+          body: blob,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload avatar');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        const avatarStorageId = uploadResult.storageId;
+
+        const updatedUser = await updateAvatar({
+          userId: user._id,
+          avatarStorageId,
+        });
+
+        await login(updatedUser);
+
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Avatar updated successfully!',
+          visibilityTime: 3000,
+        });
+      }
+    } catch (error: any) {
+      console.error('Avatar update error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to update avatar. Please try again.',
+        visibilityTime: 4000,
+      });
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   const renderPost = ({ item }: { item: Post }) => (
@@ -75,11 +152,30 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.profileInfo}>
-          <View style={styles.avatarLarge}>
-            <Text style={styles.avatarLargeText}>
-              {user.name.charAt(0).toUpperCase()}
-            </Text>
-          </View>
+          <TouchableOpacity
+            style={styles.avatarContainer}
+            onPress={handleChangeAvatar}
+            disabled={uploadingAvatar}
+          >
+            {user.avatar ? (
+              <Image source={{ uri: user.avatar }} style={styles.avatarLarge} />
+            ) : (
+              <View style={styles.avatarLarge}>
+                <Text style={styles.avatarLargeText}>
+                  {user.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            {uploadingAvatar ? (
+              <View style={styles.avatarOverlay}>
+                <ActivityIndicator color="#fff" size="small" />
+              </View>
+            ) : (
+              <View style={styles.avatarEditIcon}>
+                <Ionicons name="camera" size={20} color="#fff" />
+              </View>
+            )}
+          </TouchableOpacity>
           <Text style={styles.name}>{user.name}</Text>
           <Text style={styles.email}>{user.email}</Text>
         </View>
@@ -141,6 +237,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 15,
+  },
   avatarLarge: {
     width: 90,
     height: 90,
@@ -148,7 +248,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#E1306C',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 15,
+  },
+  avatarEditIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#E1306C',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 45,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   avatarLargeText: {
     color: '#fff',
