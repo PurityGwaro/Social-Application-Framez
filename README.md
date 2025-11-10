@@ -191,5 +191,5 @@ The app has been tested on:
 - Reinstall dependencies: `rm -rf node_modules && npm install`  
 - Check that all peer dependencies are installed  
 
-**Demo Video**: [Link to demo video]  
-**Appetize.io Link**: [Link to deployed app]
+**Demo Video**: https://drive.google.com/file/d/1_Yv6BfGaX_LNLb47pEqSZB-cMweyzbTP/view?usp=sharing
+**Appetize.io Link**: https://appetize.io/app/b_sfbp7ke47mmchvssddgx4auxmq
